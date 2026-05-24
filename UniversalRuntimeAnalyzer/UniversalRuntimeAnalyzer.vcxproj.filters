@@ -1,0 +1,148 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{a0000000-0000-0000-0000-000000000001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\analysis">
+      <UniqueIdentifier>{a0000000-0000-0000-0000-000000000002}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\app">
+      <UniqueIdentifier>{a0000000-0000-0000-0000-000000000003}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core">
+      <UniqueIdentifier>{a0000000-0000-0000-0000-000000000004}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\engine">
+      <UniqueIdentifier>{a0000000-0000-0000-0000-000000000005}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\engine\modules">
+      <UniqueIdentifier>{a0000000-0000-0000-0000-000000000006}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\engine\modules\unity">
+      <UniqueIdentifier>{a0000000-0000-0000-0000-000000000007}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\engine\modules\goldsrc">
+      <UniqueIdentifier>{a0000000-0000-0000-0000-000000000008}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\engine\modules\source">
+      <UniqueIdentifier>{a0000000-0000-0000-0000-000000000009}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\engine\modules\generic">
+      <UniqueIdentifier>{a0000000-0000-0000-0000-00000000000a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\export">
+      <UniqueIdentifier>{a0000000-0000-0000-0000-00000000000b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\platform">
+      <UniqueIdentifier>{a0000000-0000-0000-0000-00000000000c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="data">
+      <UniqueIdentifier>{a0000000-0000-0000-0000-00000000000d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="data\signatures">
+      <UniqueIdentifier>{a0000000-0000-0000-0000-00000000000e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{a0000000-0000-0000-0000-00000000000f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\imgui">
+      <UniqueIdentifier>{a0000000-0000-0000-0000-000000000010}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\imgui\backends">
+      <UniqueIdentifier>{a0000000-0000-0000-0000-000000000011}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp"><Filter>src</Filter></ClCompile>
+
+    <ClCompile Include="src\analysis\OffsetResolver.cpp"><Filter>src\analysis</Filter></ClCompile>
+    <ClCompile Include="src\analysis\PatternScanner.cpp"><Filter>src\analysis</Filter></ClCompile>
+    <ClCompile Include="src\analysis\RttiScanner.cpp"><Filter>src\analysis</Filter></ClCompile>
+    <ClCompile Include="src\analysis\SignatureLoader.cpp"><Filter>src\analysis</Filter></ClCompile>
+    <ClCompile Include="src\analysis\StringScanner.cpp"><Filter>src\analysis</Filter></ClCompile>
+    <ClCompile Include="src\analysis\XrefScanner.cpp"><Filter>src\analysis</Filter></ClCompile>
+
+    <ClCompile Include="src\app\ArgParser.cpp"><Filter>src\app</Filter></ClCompile>
+    <ClCompile Include="src\app\CliApp.cpp"><Filter>src\app</Filter></ClCompile>
+    <ClCompile Include="src\app\GuiApp.cpp"><Filter>src\app</Filter></ClCompile>
+
+    <ClCompile Include="src\core\HexUtils.cpp"><Filter>src\core</Filter></ClCompile>
+    <ClCompile Include="src\core\Logger.cpp"><Filter>src\core</Filter></ClCompile>
+
+    <ClCompile Include="src\engine\AnalysisReport.cpp"><Filter>src\engine</Filter></ClCompile>
+    <ClCompile Include="src\engine\EngineContext.cpp"><Filter>src\engine</Filter></ClCompile>
+    <ClCompile Include="src\engine\EngineRegistry.cpp"><Filter>src\engine</Filter></ClCompile>
+    <ClCompile Include="src\engine\modules\generic\GenericNativeEngine.cpp"><Filter>src\engine\modules\generic</Filter></ClCompile>
+    <ClCompile Include="src\engine\modules\goldsrc\GoldSrcEngine.cpp"><Filter>src\engine\modules\goldsrc</Filter></ClCompile>
+    <ClCompile Include="src\engine\modules\source\SourceEngine.cpp"><Filter>src\engine\modules\source</Filter></ClCompile>
+    <ClCompile Include="src\engine\modules\unity\UnityIL2CPPEngine.cpp"><Filter>src\engine\modules\unity</Filter></ClCompile>
+
+    <ClCompile Include="src\export\JsonExporter.cpp"><Filter>src\export</Filter></ClCompile>
+
+    <ClCompile Include="src\platform\MemoryMap.cpp"><Filter>src\platform</Filter></ClCompile>
+    <ClCompile Include="src\platform\MemoryReader.cpp"><Filter>src\platform</Filter></ClCompile>
+    <ClCompile Include="src\platform\ModuleEnumerator.cpp"><Filter>src\platform</Filter></ClCompile>
+    <ClCompile Include="src\platform\PEParser.cpp"><Filter>src\platform</Filter></ClCompile>
+    <ClCompile Include="src\platform\ProcessEnumerator.cpp"><Filter>src\platform</Filter></ClCompile>
+    <ClCompile Include="src\platform\ProcessHandle.cpp"><Filter>src\platform</Filter></ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClInclude Include="src\analysis\OffsetResolver.hpp"><Filter>src\analysis</Filter></ClInclude>
+    <ClInclude Include="src\analysis\PatternScanner.hpp"><Filter>src\analysis</Filter></ClInclude>
+    <ClInclude Include="src\analysis\RttiScanner.hpp"><Filter>src\analysis</Filter></ClInclude>
+    <ClInclude Include="src\analysis\Signature.hpp"><Filter>src\analysis</Filter></ClInclude>
+    <ClInclude Include="src\analysis\SignatureLoader.hpp"><Filter>src\analysis</Filter></ClInclude>
+    <ClInclude Include="src\analysis\StringScanner.hpp"><Filter>src\analysis</Filter></ClInclude>
+    <ClInclude Include="src\analysis\XrefScanner.hpp"><Filter>src\analysis</Filter></ClInclude>
+
+    <ClInclude Include="src\app\ArgParser.hpp"><Filter>src\app</Filter></ClInclude>
+    <ClInclude Include="src\app\CliApp.hpp"><Filter>src\app</Filter></ClInclude>
+    <ClInclude Include="src\app\GuiApp.hpp"><Filter>src\app</Filter></ClInclude>
+
+    <ClInclude Include="src\core\HexUtils.hpp"><Filter>src\core</Filter></ClInclude>
+    <ClInclude Include="src\core\Logger.hpp"><Filter>src\core</Filter></ClInclude>
+    <ClInclude Include="src\core\Result.hpp"><Filter>src\core</Filter></ClInclude>
+    <ClInclude Include="src\core\Types.hpp"><Filter>src\core</Filter></ClInclude>
+
+    <ClInclude Include="src\engine\AnalysisReport.hpp"><Filter>src\engine</Filter></ClInclude>
+    <ClInclude Include="src\engine\EngineContext.hpp"><Filter>src\engine</Filter></ClInclude>
+    <ClInclude Include="src\engine\EngineRegistry.hpp"><Filter>src\engine</Filter></ClInclude>
+    <ClInclude Include="src\engine\IGameEngine.hpp"><Filter>src\engine</Filter></ClInclude>
+    <ClInclude Include="src\engine\modules\EngineHelpers.hpp"><Filter>src\engine\modules</Filter></ClInclude>
+    <ClInclude Include="src\engine\modules\generic\GenericNativeEngine.hpp"><Filter>src\engine\modules\generic</Filter></ClInclude>
+    <ClInclude Include="src\engine\modules\goldsrc\GoldSrcEngine.hpp"><Filter>src\engine\modules\goldsrc</Filter></ClInclude>
+    <ClInclude Include="src\engine\modules\source\SourceEngine.hpp"><Filter>src\engine\modules\source</Filter></ClInclude>
+    <ClInclude Include="src\engine\modules\unity\UnityIL2CPPEngine.hpp"><Filter>src\engine\modules\unity</Filter></ClInclude>
+
+    <ClInclude Include="src\export\JsonExporter.hpp"><Filter>src\export</Filter></ClInclude>
+
+    <ClInclude Include="src\platform\MemoryMap.hpp"><Filter>src\platform</Filter></ClInclude>
+    <ClInclude Include="src\platform\MemoryReader.hpp"><Filter>src\platform</Filter></ClInclude>
+    <ClInclude Include="src\platform\ModuleEnumerator.hpp"><Filter>src\platform</Filter></ClInclude>
+    <ClInclude Include="src\platform\PEParser.hpp"><Filter>src\platform</Filter></ClInclude>
+    <ClInclude Include="src\platform\ProcessEnumerator.hpp"><Filter>src\platform</Filter></ClInclude>
+    <ClInclude Include="src\platform\ProcessHandle.hpp"><Filter>src\platform</Filter></ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="data\signatures\unity_il2cpp.json"><Filter>data\signatures</Filter></None>
+    <None Include="data\signatures\goldsrc.json"><Filter>data\signatures</Filter></None>
+    <None Include="data\signatures\source.json"><Filter>data\signatures</Filter></None>
+    <None Include="third_party\README.md"><Filter>third_party</Filter></None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="third_party\imgui\imgui.cpp"><Filter>third_party\imgui</Filter></ClCompile>
+    <ClCompile Include="third_party\imgui\imgui_demo.cpp"><Filter>third_party\imgui</Filter></ClCompile>
+    <ClCompile Include="third_party\imgui\imgui_draw.cpp"><Filter>third_party\imgui</Filter></ClCompile>
+    <ClCompile Include="third_party\imgui\imgui_tables.cpp"><Filter>third_party\imgui</Filter></ClCompile>
+    <ClCompile Include="third_party\imgui\imgui_widgets.cpp"><Filter>third_party\imgui</Filter></ClCompile>
+    <ClCompile Include="third_party\imgui\backends\imgui_impl_win32.cpp"><Filter>third_party\imgui\backends</Filter></ClCompile>
+    <ClCompile Include="third_party\imgui\backends\imgui_impl_dx11.cpp"><Filter>third_party\imgui\backends</Filter></ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="app.manifest" />
+  </ItemGroup>
+</Project>

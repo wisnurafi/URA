@@ -1,0 +1,90 @@
+# ============================================================
+# Universal Runtime Analyzer — .gitignore
+# ============================================================
+# Goal: track source + project files + bundled third-party deps,
+# ignore build outputs and IDE-local state. The third_party/
+# vendored libraries (ImGui, nlohmann/json) ARE committed so a
+# reviewer can clone and build without extra setup.
+
+# ---------- Visual Studio build outputs ----------
+# MSBuild creates these at the solution root and per-project.
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]uild/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Per-file build artifacts (covers anything missed by the dirs above).
+*.obj
+*.o
+*.pdb
+*.ipdb
+*.iobj
+*.ilk
+*.exp
+*.lib
+*.dll
+*.exe
+*.pch
+*.idb
+*.tlog
+*.tlh
+*.tli
+*.lastbuildstate
+*.unsuccessfulbuild
+*.cache
+*.opendb
+*.VC.db
+*.VC.opendb
+*.aps
+*.res
+*.rc.tlog
+
+# ---------- Visual Studio IDE state ----------
+.vs/
+*.vcxproj.user
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.psess
+*.vsp
+*.vspx
+*.sap
+
+# ---------- Resharper / VS extensions ----------
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# ---------- ClangD / VSCode ----------
+.vscode/
+.cache/
+compile_commands.json
+
+# ---------- OS metadata ----------
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+.DS_Store
+
+# ---------- Generated analysis reports ----------
+# JSON outputs from URA itself. We exclude all *.json by default
+# but explicitly KEEP the curated signature files under data/.
+*.json
+!UniversalRuntimeAnalyzer/data/signatures/*.json
+!**/data/signatures/*.json
+
+# ---------- Misc ----------
+*.bak
+*.tmp
+*.swp
+*~

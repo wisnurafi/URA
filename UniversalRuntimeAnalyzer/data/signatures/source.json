@@ -1,0 +1,13 @@
+{
+  "$schema_comment": "Sample Source-engine signatures. Source titles vary; analyses tend to start from CreateInterface and walk the interface tables.",
+  "engine": "source",
+  "module_hint": "engine.dll",
+  "signatures": [
+    {
+      "name": "createinterface_thunk",
+      "pattern": "55 8B EC 6A FF 68 ?? ?? ?? ?? 64 A1 00 00 00 00",
+      "description": "Common SEH prologue near CreateInterface",
+      "transform": "none"
+    }
+  ]
+}

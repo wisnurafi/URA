@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{9435f215-db14-42ac-b9a4-ecb5e9c3993c}</ProjectGuid>
+    <RootNamespace>UniversalRuntimeAnalyzer</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>URA</ProjectName>
+    <TargetName>URA</TargetName>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings"></ImportGroup>
+  <ImportGroup Label="Shared"></ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+
+  <PropertyGroup Label="UserMacros" />
+
+  <!-- Common compile / link settings shared by all configurations. -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ConformanceMode>true</ConformanceMode>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party;$(ProjectDir)third_party\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;NOMINMAX;_CRT_SECURE_NO_WARNINGS;URA_WITH_IMGUI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>Psapi.lib;d3d11.lib;dxgi.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <!-- Source files -->
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp" />
+
+    <ClCompile Include="src\analysis\OffsetResolver.cpp" />
+    <ClCompile Include="src\analysis\PatternScanner.cpp" />
+    <ClCompile Include="src\analysis\RttiScanner.cpp" />
+    <ClCompile Include="src\analysis\SignatureLoader.cpp" />
+    <ClCompile Include="src\analysis\StringScanner.cpp" />
+    <ClCompile Include="src\analysis\XrefScanner.cpp" />
+
+    <ClCompile Include="src\app\ArgParser.cpp" />
+    <ClCompile Include="src\app\CliApp.cpp" />
+    <ClCompile Include="src\app\GuiApp.cpp" />
+
+    <ClCompile Include="src\core\HexUtils.cpp" />
+    <ClCompile Include="src\core\Logger.cpp" />
+
+    <ClCompile Include="src\engine\AnalysisReport.cpp" />
+    <ClCompile Include="src\engine\EngineContext.cpp" />
+    <ClCompile Include="src\engine\EngineRegistry.cpp" />
+    <ClCompile Include="src\engine\modules\generic\GenericNativeEngine.cpp" />
+    <ClCompile Include="src\engine\modules\goldsrc\GoldSrcEngine.cpp" />
+    <ClCompile Include="src\engine\modules\source\SourceEngine.cpp" />
+    <ClCompile Include="src\engine\modules\unity\UnityIL2CPPEngine.cpp" />
+
+    <ClCompile Include="src\export\JsonExporter.cpp" />
+
+    <ClCompile Include="src\platform\MemoryMap.cpp" />
+    <ClCompile Include="src\platform\MemoryReader.cpp" />
+    <ClCompile Include="src\platform\ModuleEnumerator.cpp" />
+    <ClCompile Include="src\platform\PEParser.cpp" />
+    <ClCompile Include="src\platform\ProcessEnumerator.cpp" />
+    <ClCompile Include="src\platform\ProcessHandle.cpp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClInclude Include="src\analysis\OffsetResolver.hpp" />
+    <ClInclude Include="src\analysis\PatternScanner.hpp" />
+    <ClInclude Include="src\analysis\RttiScanner.hpp" />
+    <ClInclude Include="src\analysis\Signature.hpp" />
+    <ClInclude Include="src\analysis\SignatureLoader.hpp" />
+    <ClInclude Include="src\analysis\StringScanner.hpp" />
+    <ClInclude Include="src\analysis\XrefScanner.hpp" />
+
+    <ClInclude Include="src\app\ArgParser.hpp" />
+    <ClInclude Include="src\app\CliApp.hpp" />
+    <ClInclude Include="src\app\GuiApp.hpp" />
+
+    <ClInclude Include="src\core\HexUtils.hpp" />
+    <ClInclude Include="src\core\Logger.hpp" />
+    <ClInclude Include="src\core\Result.hpp" />
+    <ClInclude Include="src\core\Types.hpp" />
+
+    <ClInclude Include="src\engine\AnalysisReport.hpp" />
+    <ClInclude Include="src\engine\EngineContext.hpp" />
+    <ClInclude Include="src\engine\EngineRegistry.hpp" />
+    <ClInclude Include="src\engine\IGameEngine.hpp" />
+    <ClInclude Include="src\engine\modules\EngineHelpers.hpp" />
+    <ClInclude Include="src\engine\modules\generic\GenericNativeEngine.hpp" />
+    <ClInclude Include="src\engine\modules\goldsrc\GoldSrcEngine.hpp" />
+    <ClInclude Include="src\engine\modules\source\SourceEngine.hpp" />
+    <ClInclude Include="src\engine\modules\unity\UnityIL2CPPEngine.hpp" />
+
+    <ClInclude Include="src\export\JsonExporter.hpp" />
+
+    <ClInclude Include="src\platform\MemoryMap.hpp" />
+    <ClInclude Include="src\platform\MemoryReader.hpp" />
+    <ClInclude Include="src\platform\ModuleEnumerator.hpp" />
+    <ClInclude Include="src\platform\PEParser.hpp" />
+    <ClInclude Include="src\platform\ProcessEnumerator.hpp" />
+    <ClInclude Include="src\platform\ProcessHandle.hpp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="data\signatures\unity_il2cpp.json" />
+    <None Include="data\signatures\goldsrc.json" />
+    <None Include="data\signatures\source.json" />
+    <None Include="third_party\README.md" />
+  </ItemGroup>
+
+  <!-- Dear ImGui sources. Compiled with /W0 to keep upstream warnings out
+       of our level-4 noise; URA's own code keeps full warnings. -->
+  <ItemGroup>
+    <ClCompile Include="third_party\imgui\imgui.cpp">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="third_party\imgui\imgui_demo.cpp">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="third_party\imgui\imgui_draw.cpp">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="third_party\imgui\imgui_tables.cpp">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="third_party\imgui\imgui_widgets.cpp">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="third_party\imgui\backends\imgui_impl_win32.cpp">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="third_party\imgui\backends\imgui_impl_dx11.cpp">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Explicit asInvoker manifest. Without this, 32-bit builds can be
+         flagged as installers by Windows UAC heuristics and refuse to run
+         from a non-elevated shell with ERROR_ELEVATION_REQUIRED (740). -->
+    <Manifest Include="app.manifest" />
+  </ItemGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets"></ImportGroup>
+</Project>

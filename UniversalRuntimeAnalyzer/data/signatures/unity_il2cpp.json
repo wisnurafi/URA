@@ -1,0 +1,20 @@
+{
+  "$schema_comment": "Sample IL2CPP signatures for educational scanning. Patterns are intentionally generic; engine modules ship inline samples that are sufficient for verifying the scanner pipeline.",
+  "engine": "unity_il2cpp",
+  "module_hint": "GameAssembly.dll",
+  "signatures": [
+    {
+      "name": "il2cpp_runtime_invoke_prologue",
+      "pattern": "48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC 20",
+      "description": "Common x64 prologue used by IL2CPP runtime helpers",
+      "transform": "none"
+    },
+    {
+      "name": "rip_relative_global_lea",
+      "pattern": "48 8D 0D ?? ?? ?? ??",
+      "description": "Generic RIP-relative LEA, sanity-check for the scanner",
+      "transform": "rip_relative_32",
+      "transform_offset": 3
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "$schema_comment": "Sample GoldSrc signatures (32-bit x86). Real-world reverse engineering of GoldSrc usually leans on textual exports from client.dll/mp.dll and well-known function prologues in hw.dll.",
+  "engine": "goldsrc",
+  "module_hint": "hw.dll",
+  "signatures": [
+    {
+      "name": "common_x86_prologue",
+      "pattern": "55 8B EC 83 EC ?? 56 57",
+      "description": "Common x86 stack frame prologue",
+      "transform": "none"
+    }
+  ]
+}
