@@ -131,6 +131,7 @@
     <ClCompile Include="src\app\ArgParser.cpp" />
     <ClCompile Include="src\app\CliApp.cpp" />
     <ClCompile Include="src\app\GuiApp.cpp" />
+    <ClCompile Include="src\app\Orchestrator.cpp" />
 
     <ClCompile Include="src\core\HexUtils.cpp" />
     <ClCompile Include="src\core\Logger.cpp" />
@@ -151,6 +152,9 @@
     <ClCompile Include="src\platform\PEParser.cpp" />
     <ClCompile Include="src\platform\ProcessEnumerator.cpp" />
     <ClCompile Include="src\platform\ProcessHandle.cpp" />
+    <ClCompile Include="src\platform\Architecture.cpp" />
+    <ClCompile Include="src\platform\AcquisitionDiagnostic.cpp" />
+    <ClCompile Include="src\platform\StaticPELoader.cpp" />
   </ItemGroup>
 
   <ItemGroup>
@@ -165,6 +169,7 @@
     <ClInclude Include="src\app\ArgParser.hpp" />
     <ClInclude Include="src\app\CliApp.hpp" />
     <ClInclude Include="src\app\GuiApp.hpp" />
+    <ClInclude Include="src\app\Orchestrator.hpp" />
 
     <ClInclude Include="src\core\HexUtils.hpp" />
     <ClInclude Include="src\core\Logger.hpp" />
@@ -189,6 +194,9 @@
     <ClInclude Include="src\platform\PEParser.hpp" />
     <ClInclude Include="src\platform\ProcessEnumerator.hpp" />
     <ClInclude Include="src\platform\ProcessHandle.hpp" />
+    <ClInclude Include="src\platform\Architecture.hpp" />
+    <ClInclude Include="src\platform\AcquisitionDiagnostic.hpp" />
+    <ClInclude Include="src\platform\StaticPELoader.hpp" />
   </ItemGroup>
 
   <ItemGroup>

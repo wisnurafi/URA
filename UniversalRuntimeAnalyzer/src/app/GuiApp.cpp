@@ -13,9 +13,11 @@
 
 #include "GuiApp.hpp"
 
+#include "Orchestrator.hpp"
 #include "../core/Logger.hpp"
 #include "../engine/EngineContext.hpp"
 #include "../export/JsonExporter.hpp"
+#include "../platform/AcquisitionDiagnostic.hpp"
 #include "../platform/MemoryMap.hpp"
 #include "../platform/MemoryReader.hpp"
 #include "../platform/ModuleEnumerator.hpp"
@@ -188,81 +190,38 @@ namespace ura::app {
                 return;
             }
             const auto& proc = s.processes[s.selected_pid_idx];
-            const auto pid = proc.pid;
 
-            auto h = platform::ProcessHandle::open_for_read(pid);
-            if (!h) {
-                s.status = std::string("OpenProcess failed: ") + h.error().message;
-                return;
-            }
-            platform::MemoryReader reader(h.value());
-            auto mods = platform::ModuleEnumerator::list(h.value());
-            if (!mods) {
-                s.status = "Module enumeration failed: " + mods.error().message;
-                return;
-            }
-            engine::EngineContext ctx{ h.value(), reader, mods.value() };
-
-            const engine::IGameEngine* eng = nullptr;
-            if (s.selected_engine < 0) {
-                eng = s.registry->auto_detect(ctx);
-                if (!eng) { s.status = "Auto-detect found no matching engine."; return; }
-            } else {
+            // Build the request and run the shared pipeline. The
+            // orchestrator always returns a populated AnalysisReport, even
+            // on failure paths, so we display whatever we got.
+            AnalyzeRequest req;
+            req.pid = proc.pid;
+            if (s.selected_engine >= 0) {
                 const auto all = s.registry->all();
-                if (s.selected_engine >= static_cast<int>(all.size())) {
-                    s.status = "Invalid engine selection."; return;
+                if (s.selected_engine < static_cast<int>(all.size())) {
+                    req.engine_id = all[s.selected_engine]->id();
                 }
-                eng = all[s.selected_engine];
             }
 
-            auto rep = eng->analyze(ctx);
-            if (!rep) {
-                s.status = std::string("Analysis failed: ") + rep.error().message;
-                return;
-            }
-            auto& report = rep.value();
-            report.process.pid      = pid;
-            report.process.name     = proc.name;
-            report.process.path     = proc.full_path;
-            report.process.is_wow64 = h.value().is_wow64();
-            report.process.bitness  = h.value().bitness();
+            Orchestrator orch(*s.registry);
+            AnalyzeOutcome outcome = orch.analyze(req);
+            auto& report = outcome.report;
 
-            // Memory-map snapshot identical to CLI path.
-            if (auto mm = platform::MemoryMapWalker::walk(h.value(), false)) {
-                const auto& sm = mm.value();
-                engine::ReportMemoryMap rm;
-                rm.present = true;
-                rm.total_regions   = sm.total_regions;
-                rm.committed       = sm.committed;
-                rm.reserved        = sm.reserved;
-                rm.free_regions    = sm.free_regions;
-                rm.executable      = sm.executable;
-                rm.writable        = sm.writable;
-                rm.rwx             = sm.rwx;
-                rm.image_regions   = sm.image_regions;
-                rm.mapped_regions  = sm.mapped_regions;
-                rm.private_regions = sm.private_regions;
-                rm.total_committed_bytes = sm.total_committed_bytes;
-                rm.regions.reserve(sm.regions.size());
-                for (const auto& rg : sm.regions) {
-                    engine::ReportMemoryRegion er;
-                    er.base       = rg.base;
-                    er.alloc_base = rg.alloc_base;
-                    er.size       = rg.size;
-                    er.state      = rg.state_str;
-                    er.protect    = rg.protect_str;
-                    er.type       = rg.type_str;
-                    rm.regions.push_back(std::move(er));
-                }
-                if (sm.rwx > 0)
-                    rm.anomalies.push_back(std::to_string(sm.rwx) +
-                        " RWX region(s) — possible JIT or injected code.");
-                report.memory_map = std::move(rm);
-            }
+            // The orchestrator may not know the process's display name when
+            // attaching by PID — fill in from the process picker.
+            if (report.process.name.empty()) report.process.name = proc.name;
+            if (report.process.path.empty()) report.process.path = proc.full_path;
 
             s.raw_json = exporter::JsonExporter::to_string(report, /*pretty=*/true);
-            s.report = std::move(report);
-            s.status = "Analysis complete.";
+            s.report   = std::move(report);
+
+            const auto status = s.report->acquisition.status;
+            if (status == platform::AcquisitionStatus::Success) {
+                s.status = "Analysis complete.";
+            } else {
+                s.status = std::string("Stopped at acquisition: ")
+                         + platform::to_string(status);
+            }
         }
 
         // ---------------- views ----------------
@@ -540,6 +499,86 @@ namespace ura::app {
                 ImGui::TextColored(ImVec4(1, 0.6f, 0.4f, 1), "%s", w.c_str());
         }
 
+        // Map a status to an ImGui colour. Five tiers per
+        // platform::StatusSeverity: success / warning / unsupported /
+        // restricted / failed.
+        ImVec4 colour_for(platform::AcquisitionStatus st) {
+            switch (platform::severity_of(st)) {
+                case platform::StatusSeverity::Success:     return ImVec4(0.4f, 0.9f, 0.5f, 1.0f);
+                case platform::StatusSeverity::Warning:     return ImVec4(0.95f, 0.85f, 0.4f, 1.0f);
+                case platform::StatusSeverity::Unsupported: return ImVec4(0.7f, 0.7f, 0.75f, 1.0f);
+                case platform::StatusSeverity::Restricted:  return ImVec4(1.0f, 0.6f, 0.3f, 1.0f);
+                case platform::StatusSeverity::Failed:      return ImVec4(1.0f, 0.45f, 0.45f, 1.0f);
+            }
+            return ImVec4(1, 1, 1, 1);
+        }
+
+        void view_diagnostics(AppState& s) {
+            if (!s.report) { ImGui::TextDisabled("No report yet."); return; }
+            const auto& d = s.report->acquisition;
+            const auto colour = colour_for(d.status);
+
+            ImGui::TextUnformatted("Status:");
+            ImGui::SameLine();
+            ImGui::TextColored(colour, "%s", platform::to_string(d.status));
+
+            ImGui::Separator();
+            ImGui::Text("Target");
+            ImGui::Indent();
+            ImGui::Text("PID:      %u", s.report->process.pid);
+            ImGui::Text("Name:     %s", w2u(s.report->process.name).c_str());
+            ImGui::Text("Path:     %s", w2u(s.report->process.path).c_str());
+            ImGui::Unindent();
+
+            ImGui::Separator();
+            ImGui::Text("Architecture");
+            ImGui::Indent();
+            ImGui::Text("Analyzer: %s", core::to_string(d.analyzer_architecture));
+            ImGui::Text("Target:   %s", core::to_string(d.target_architecture));
+            ImGui::Text("Native:   %s", core::to_string(d.native_architecture));
+            ImGui::Unindent();
+
+            ImGui::Separator();
+            ImGui::Text("Stages");
+            ImGui::Indent();
+            ImGui::Text("Process handle:        %s", d.process_handle_opened       ? "opened" : "not opened");
+            ImGui::Text("Process query:         %s", d.process_query_succeeded     ? "ok"     : "failed/skipped");
+            ImGui::Text("Module enumeration:    %s", d.module_enumeration_succeeded ? "ok"     : "failed/skipped");
+            ImGui::Text("Memory read:           %s", d.memory_read_succeeded       ? "ok"     : "failed/skipped");
+            ImGui::Text("Enumeration attempts:  %d", d.enumeration_attempts);
+            ImGui::Unindent();
+
+            if (d.win32_error != 0 || !d.failed_api.empty() || !d.failed_stage.empty()) {
+                ImGui::Separator();
+                ImGui::Text("Failure detail");
+                ImGui::Indent();
+                if (d.win32_error != 0)
+                    ImGui::Text("Win32 error:  %u", d.win32_error);
+                if (!d.failed_api.empty())
+                    ImGui::Text("API:          %s", d.failed_api.c_str());
+                if (!d.failed_stage.empty())
+                    ImGui::Text("Stage:        %s", d.failed_stage.c_str());
+                ImGui::Unindent();
+            }
+
+            if (!d.details.empty()) {
+                ImGui::Separator();
+                ImGui::Text("Diagnosis");
+                ImGui::PushTextWrapPos(0.0f);
+                ImGui::TextUnformatted(d.details.c_str());
+                ImGui::PopTextWrapPos();
+            }
+
+            if (!d.recommended_action.empty()) {
+                ImGui::Separator();
+                ImGui::Text("Recommended action");
+                ImGui::PushTextWrapPos(0.0f);
+                ImGui::TextColored(ImVec4(0.7f, 0.85f, 1.0f, 1.0f),
+                                   "%s", d.recommended_action.c_str());
+                ImGui::PopTextWrapPos();
+            }
+        }
+
         void view_raw_json(AppState& s) {
             if (s.raw_json.empty()) { ImGui::TextDisabled("No report yet."); return; }
             if (ImGui::Button("Save to file...")) {
@@ -619,6 +658,15 @@ namespace ura::app {
     } // namespace
 
     int GuiApp::run() {
+        // Detach the inherited console. When URA is double-clicked from
+        // File Explorer the OS allocates a fresh console (we link as
+        // SubSystem=Console for CLI mode); FreeConsole dismisses that
+        // window so the GUI is the only surface the user sees. When URA
+        // is launched from an existing cmd.exe with --gui, this also
+        // detaches us from the parent console — that's intentional, GUI
+        // sessions don't write to stdout anyway.
+        ::FreeConsole();
+
         AppState s;
         s.registry = &registry_;
         refresh_processes(s);
@@ -701,6 +749,7 @@ namespace ura::app {
 
             if (ImGui::BeginTabBar("tabs")) {
                 if (ImGui::BeginTabItem("Processes"))   { view_processes(s);  ImGui::EndTabItem(); }
+                if (ImGui::BeginTabItem("Diagnostics")) { view_diagnostics(s); ImGui::EndTabItem(); }
                 if (ImGui::BeginTabItem("Modules"))     { view_modules(s);    ImGui::EndTabItem(); }
                 if (ImGui::BeginTabItem("Groups"))      { view_groups(s);     ImGui::EndTabItem(); }
                 if (ImGui::BeginTabItem("Memory Map")){ view_memory_map(s); ImGui::EndTabItem(); }

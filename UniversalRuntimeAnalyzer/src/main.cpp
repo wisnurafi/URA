@@ -25,6 +25,15 @@ int main(int argc, char** argv) {
         return 64; // EX_USAGE
     }
 
+    // Double-click / no-arg launch: open the GUI by default. The CLI is
+    // opt-in via explicit flags. This way the .exe is usable from File
+    // Explorer without ever touching cmd.exe.
+    if (argc <= 1) {
+    #ifdef URA_WITH_IMGUI
+        parsed.args.gui = true;
+    #endif
+    }
+
     if (parsed.args.gui) {
 #ifdef URA_WITH_IMGUI
         ura::app::GuiApp gui;

@@ -4,6 +4,7 @@
 #pragma once
 
 #include "../core/Types.hpp"
+#include "../platform/AcquisitionDiagnostic.hpp"
 
 #include <chrono>
 #include <map>
@@ -69,6 +70,9 @@ namespace ura::engine {
         std::wstring  path;
         bool          is_wow64 = false;
         int           bitness  = 64;
+        std::string   architecture;          // "x86" / "x64" / "ARM64" / "unknown"
+        std::string   analyzer_architecture; // analyzer's own arch
+        std::string   native_architecture;   // host OS arch
     };
 
     // Free-form group of offsets. Engines structure their results into
@@ -89,6 +93,35 @@ namespace ura::engine {
         core::Rva     vftable_rva     = 0;
         std::uint32_t inheritance_offset = 0;
         std::uint32_t method_count    = 0;
+    };
+
+    // Static (disk-based) PE inspection. Populated only when the
+    // orchestrator runs the static-fallback path because live runtime
+    // acquisition was unavailable. Addresses inside this block are RVAs
+    // (relative to image base); to compute a runtime absolute address use
+    // the formula `module_base + rva` once the module is loaded.
+    struct ReportStaticExport {
+        std::string   name;
+        std::uint16_t ordinal      = 0;
+        core::Rva     rva          = 0;
+        bool          is_forwarder = false;
+        std::string   forwarder_target;
+    };
+
+    struct ReportStaticImage {
+        bool                              present = false;
+        std::wstring                      file_path;
+        std::wstring                      file_name;
+        bool                              is_64bit = false;
+        std::uint16_t                     machine  = 0;
+        std::uint32_t                     timestamp = 0;
+        std::uint64_t                     image_base_preferred = 0;
+        std::uint32_t                     size_of_image = 0;
+        core::Rva                         entry_point_rva = 0;
+        std::uint64_t                     file_size_bytes = 0;
+        std::vector<std::string>          sections; // ".text", ".rdata", ...
+        std::vector<ReportStaticExport>   exports;
+        std::string                       runtime_formula = "module_base + rva";
     };
 
     struct AnalysisReport {
@@ -114,6 +147,16 @@ namespace ura::engine {
         // Optional address-space snapshot (filled in by the orchestrator
         // before the engine runs, so every engine inherits it for free).
         ReportMemoryMap                   memory_map;
+
+        // Static (disk) PE inspection. Populated by the orchestrator's
+        // fallback path when live acquisition fails but a process path is
+        // known. Empty by default.
+        ReportStaticImage                 static_image;
+
+        // Structured acquisition diagnostic. Always populated, even on the
+        // success path (status=Success). Replaces the old practice of
+        // hand-formatting an error string into `warnings`.
+        platform::AcquisitionDiagnostic   acquisition;
 
         // Helper to add an offset to a named group, creating the group if it
         // doesn't exist yet.
