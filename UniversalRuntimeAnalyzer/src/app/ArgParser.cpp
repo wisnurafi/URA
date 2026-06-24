@@ -29,6 +29,7 @@ namespace ura::app {
 "Subject selection (one of):\n"
 "  --pid <N>                 Attach to process by PID\n"
 "  --process <name.exe>      Attach to first process matching this name\n"
+"  --static-pe <path>        Inspect a PE file on disk (no process attach)\n"
 "\n"
 "Engine selection:\n"
 "  --auto                    Auto-detect engine (default)\n"
@@ -55,8 +56,9 @@ namespace ura::app {
 "  URA.exe --process GooseGooseDuck.exe --engine unity_il2cpp --out ggd.json\n"
 "\n"
 "NOTE: URA opens the target process with PROCESS_QUERY_INFORMATION |\n"
-"      PROCESS_VM_READ. It does not write target memory and is not intended\n"
-"      for use against multiplayer or anti-cheat-protected processes.\n";
+"      PROCESS_VM_READ. It does not write target memory. Designed for\n"
+"      offline / authorised targets — software you own, open-source\n"
+"      applications, crackmes, and authorised testing environments.\n";
         return os.str();
     }
 
@@ -98,6 +100,10 @@ namespace ura::app {
             else if (a == "--process") {
                 auto v = next("--process"); if (!r.ok) return r;
                 r.args.process_name = narrow_to_wide(v);
+            }
+            else if (a == "--static-pe") {
+                auto v = next("--static-pe"); if (!r.ok) return r;
+                r.args.static_pe_path = narrow_to_wide(v);
             }
             else if (a == "--engine") {
                 auto v = next("--engine"); if (!r.ok) return r;

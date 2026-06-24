@@ -4,6 +4,7 @@
 #pragma once
 
 #include "ArgParser.hpp"
+#include "Orchestrator.hpp"
 
 #include "../engine/EngineRegistry.hpp"
 

@@ -1,14 +1,13 @@
 // app/CliApp.cpp
 #include "CliApp.hpp"
 
+#include "Orchestrator.hpp"
 #include "../core/Logger.hpp"
-#include "../engine/EngineContext.hpp"
 #include "../export/JsonExporter.hpp"
-#include "../platform/MemoryMap.hpp"
-#include "../platform/MemoryReader.hpp"
-#include "../platform/ModuleEnumerator.hpp"
+#include "../platform/AcquisitionDiagnostic.hpp"
+#include "../platform/Architecture.hpp"
 #include "../platform/ProcessEnumerator.hpp"
-#include "../platform/ProcessHandle.hpp"
+#include "../platform/StaticPELoader.hpp"
 
 #ifdef _WIN32
 #  include <windows.h>
@@ -16,6 +15,7 @@
 
 #include <cstdio>
 #include <iostream>
+#include <sstream>
 
 namespace ura::app {
 
@@ -35,6 +35,42 @@ namespace ura::app {
         #else
             return std::string(w.begin(), w.end());
         #endif
+        }
+
+        // Render the structured acquisition diagnostic to stderr in the
+        // multi-line block format from PROMPT.md Tahap 5. Always called on
+        // failure paths; optionally called on success in --verbose mode.
+        void print_diagnostic(const engine::AnalysisReport& r,
+                              const char* stage_label) {
+            const auto& d = r.acquisition;
+            std::ostringstream os;
+            os << "\nAnalysis stopped at: " << stage_label << "\n\n"
+               << "Target:\n"
+               << "  PID:                  " << r.process.pid << '\n'
+               << "  Name:                 " << w2u(r.process.name) << '\n'
+               << "  Path:                 " << w2u(r.process.path) << "\n\n"
+               << platform::format_diagnostic(d);
+            std::fputs(os.str().c_str(), stderr);
+        }
+
+        // Map a diagnostic status to a CLI exit code. The orchestrator
+        // collapses many failure modes into structured states; we map them
+        // back to small integers for shell scripts.
+        int exit_code_for(platform::AcquisitionStatus s) {
+            switch (s) {
+                case platform::AcquisitionStatus::Success:               return 0;
+                case platform::AcquisitionStatus::ProcessNotFound:       return 2;
+                case platform::AcquisitionStatus::OpenProcessFailed:
+                case platform::AcquisitionStatus::AccessDenied:          return 3;
+                case platform::AcquisitionStatus::ArchitectureMismatch:  return 9;
+                case platform::AcquisitionStatus::ProcessTerminated:
+                case platform::AcquisitionStatus::LoaderTransition:
+                case platform::AcquisitionStatus::PartialCopy:
+                case platform::AcquisitionStatus::ModuleEnumerationFailed:
+                case platform::AcquisitionStatus::MemoryReadRestricted:
+                case platform::AcquisitionStatus::ProtectedOrRestricted: return 4;
+                default:                                                 return 1;
+            }
         }
     } // namespace
 
@@ -64,155 +100,151 @@ namespace ura::app {
     }
 
     int CliApp::cmd_analyze(const CliArgs& args) {
-        // 1. Resolve PID.
-        core::Pid pid = 0;
-        std::wstring resolved_name;
-        std::wstring resolved_path;
-        if (args.pid) {
-            pid = *args.pid;
-        } else if (args.process_name) {
-            auto p = platform::ProcessEnumerator::find_by_name(*args.process_name);
-            if (!p) {
-                std::fprintf(stderr, "Process not found: %s\n",
-                             w2u(*args.process_name).c_str());
-                return 2;
+        // Static-only mode. Inspect a PE file on disk without ever opening
+        // a process handle. Useful for permission-denied targets or pure
+        // offline analysis.
+        if (args.static_pe_path) {
+            auto img = platform::StaticPELoader::load(*args.static_pe_path);
+            if (!img) {
+                std::fprintf(stderr, "Static PE load failed: %s\n",
+                             img.error().message.c_str());
+                return 4;
             }
-            pid           = p.value().pid;
-            resolved_name = p.value().name;
-            resolved_path = p.value().full_path;
-        } else {
-            std::fprintf(stderr, "Specify --pid or --process. Use --help for usage.\n");
+            engine::AnalysisReport report;
+            report.engine_id           = "static";
+            report.engine_display_name = "Static PE";
+            report.process.path        = img.value().file_path;
+            report.process.name        = img.value().file_name;
+            report.process.architecture = img.value().is_64bit ? "x64" : "x86";
+            report.process.bitness     = img.value().is_64bit ? 64 : 32;
+            report.process.analyzer_architecture =
+                core::to_string(platform::analyzer_architecture());
+            report.process.native_architecture =
+                core::to_string(platform::detect_native_architecture());
+            report.acquisition.status = platform::AcquisitionStatus::Success;
+            report.acquisition.analyzer_architecture = platform::analyzer_architecture();
+            report.acquisition.native_architecture   = platform::detect_native_architecture();
+            report.acquisition.target_architecture =
+                img.value().is_64bit ? core::Architecture::X64
+                                     : core::Architecture::X86;
+            report.acquisition.details = "Static PE inspection (disk only).";
+
+            engine::ReportStaticImage dst;
+            dst.present              = true;
+            dst.file_path            = img.value().file_path;
+            dst.file_name            = img.value().file_name;
+            dst.is_64bit             = img.value().is_64bit;
+            dst.machine              = img.value().machine;
+            dst.timestamp            = img.value().timestamp;
+            dst.image_base_preferred = img.value().image_base_preferred;
+            dst.size_of_image        = img.value().size_of_image;
+            dst.entry_point_rva      = img.value().entry_point_rva;
+            dst.file_size_bytes      = img.value().file_size_bytes;
+            for (const auto& s : img.value().sections) dst.sections.push_back(s.name);
+            for (const auto& e : img.value().exports) {
+                engine::ReportStaticExport ee;
+                ee.name             = e.name;
+                ee.ordinal          = e.ordinal;
+                ee.rva              = e.rva;
+                ee.is_forwarder     = e.is_forwarder;
+                ee.forwarder_target = e.forwarder_target;
+                dst.exports.push_back(std::move(ee));
+            }
+            report.static_image = std::move(dst);
+
+            // Mirror exports into a regular offset group.
+            engine::ReportGroup grp;
+            grp.name = "static.exports";
+            for (const auto& e : report.static_image.exports) {
+                if (e.name.empty() || e.is_forwarder) continue;
+                engine::ReportOffset off;
+                off.label       = e.name;
+                off.rva         = e.rva;
+                off.module_name = report.static_image.file_name;
+                off.notes       = "static: runtime = module_base + rva";
+                grp.offsets.push_back(std::move(off));
+            }
+            if (!grp.offsets.empty()) report.groups.push_back(std::move(grp));
+
+            if (args.out_path) {
+                auto w = exporter::JsonExporter::write_file(report, *args.out_path,
+                                                            args.pretty);
+                if (!w) {
+                    std::fprintf(stderr, "Export failed: %s\n",
+                                 w.error().message.c_str());
+                    return 8;
+                }
+                std::printf("OK: %s (%zu sections, %zu exports)\n",
+                            args.out_path->c_str(),
+                            report.static_image.sections.size(),
+                            report.static_image.exports.size());
+            } else {
+                std::cout << exporter::JsonExporter::to_string(report, args.pretty)
+                          << '\n';
+            }
+            return 0;
+        }
+
+        if (!args.pid && !args.process_name) {
+            std::fprintf(stderr,
+                         "Specify --pid or --process. Use --help for usage.\n");
             return 64;
         }
 
-        // 2. Open read-only handle.
-        auto h = platform::ProcessHandle::open_for_read(pid);
-        if (!h) {
-            std::fprintf(stderr, "OpenProcess failed for pid %lu: %s\n",
-                         (unsigned long)pid, h.error().message.c_str());
-            return 3;
+        // Build the request and run the shared pipeline.
+        AnalyzeRequest req;
+        req.pid          = args.pid;
+        req.process_name = args.process_name;
+        req.engine_id    = args.engine_id;
+
+        Orchestrator orch(registry_);
+        AnalyzeOutcome outcome = orch.analyze(req);
+
+        const auto& report = outcome.report;
+        const auto status = report.acquisition.status;
+
+        // Failure path: render the structured diagnostic and bail with a
+        // status-specific exit code. No "anti-cheat" verdict.
+        if (status != platform::AcquisitionStatus::Success) {
+            const char* stage = !outcome.acquired ? "Module Enumeration"
+                              : !outcome.analyzed ? "Engine Analysis"
+                              : "Post-analysis";
+            print_diagnostic(report, stage);
+
+            // Static fallback may still have produced useful data
+            // (sections, exports, entry RVA from disk). Emit the JSON if
+            // the user asked for an output file so they can use it.
+            if (args.out_path && report.static_image.present) {
+                auto w = exporter::JsonExporter::write_file(report, *args.out_path,
+                                                            args.pretty);
+                if (w) {
+                    std::fprintf(stderr,
+                        "\nStatic fallback emitted: %s "
+                        "(%zu section(s), %zu export(s))\n",
+                        args.out_path->c_str(),
+                        report.static_image.sections.size(),
+                        report.static_image.exports.size());
+                }
+            }
+            return exit_code_for(status);
         }
 
-        // 3. Snapshot modules.
-        platform::MemoryReader reader(h.value());
-        auto mods = platform::ModuleEnumerator::list(h.value());
-        if (!mods) {
-            std::fprintf(stderr, "Module enumeration failed: %s\n",
-                         mods.error().message.c_str());
-            return 4;
-        }
-
-        // Try to fill resolved_name/path if we attached by PID directly.
-        if (resolved_name.empty() && !mods.value().empty()) {
-            resolved_name = mods.value().front().name;
-            resolved_path = mods.value().front().full_path;
-        }
-
-        // 4. Build engine context.
-        engine::EngineContext ctx{ h.value(), reader, mods.value() };
-
-        // 5. Pick engine.
-        const engine::IGameEngine* eng = nullptr;
-        if (args.engine_id) {
-            eng = registry_.find(*args.engine_id);
-            if (!eng) {
-                std::fprintf(stderr, "Unknown engine id: %s\n",
-                             args.engine_id->c_str());
-                return 5;
-            }
-        } else {
-            eng = registry_.auto_detect(ctx);
-            if (!eng) {
-                std::fprintf(stderr, "Auto-detect found no matching engine.\n");
-                return 6;
-            }
-        }
-        URA_LOG_INFO("Using engine: %s (%s)",
-                     eng->id().c_str(), eng->display_name().c_str());
-
-        // 6. Analyze.
-        auto rep = eng->analyze(ctx);
-        if (!rep) {
-            std::fprintf(stderr, "Analysis failed: %s\n", rep.error().message.c_str());
-            return 7;
-        }
-        auto& report = rep.value();
-        report.process.pid       = pid;
-        report.process.name      = resolved_name;
-        report.process.path      = resolved_path;
-        report.process.is_wow64  = h.value().is_wow64();
-        report.process.bitness   = h.value().bitness();
-
-        // 6b. Address-space snapshot. Engine-agnostic; we attach it after
-        //     the engine runs so a slow walk can't poison engine timing,
-        //     and so engines that fail still produce no memory map noise.
-        if (auto mm = platform::MemoryMapWalker::walk(h.value(),
-                                                      /*keep_free=*/false)) {
-            const auto& s = mm.value();
-            engine::ReportMemoryMap rm;
-            rm.present               = true;
-            rm.total_regions         = s.total_regions;
-            rm.committed             = s.committed;
-            rm.reserved              = s.reserved;
-            rm.free_regions          = s.free_regions;
-            rm.executable            = s.executable;
-            rm.writable              = s.writable;
-            rm.rwx                   = s.rwx;
-            rm.image_regions         = s.image_regions;
-            rm.mapped_regions        = s.mapped_regions;
-            rm.private_regions       = s.private_regions;
-            rm.total_committed_bytes = s.total_committed_bytes;
-
-            rm.regions.reserve(s.regions.size());
-            for (const auto& r : s.regions) {
-                engine::ReportMemoryRegion er;
-                er.base       = r.base;
-                er.alloc_base = r.alloc_base;
-                er.size       = r.size;
-                er.state      = r.state_str;
-                er.protect    = r.protect_str;
-                er.type       = r.type_str;
-                rm.regions.push_back(std::move(er));
-            }
-
-            // Anomaly heuristics: RWX and private executable regions are
-            // both classic injection / JIT signals worth surfacing.
-            if (s.rwx > 0) {
-                rm.anomalies.push_back(std::to_string(s.rwx) +
-                    " RWX region(s) — possible JIT or injected code.");
-            }
-            std::size_t priv_exec = 0;
-            for (const auto& r : s.regions) {
-                if (r.type == MEM_PRIVATE && r.is_executable()) ++priv_exec;
-            }
-            if (priv_exec > 0) {
-                rm.anomalies.push_back(std::to_string(priv_exec) +
-                    " executable MEM_PRIVATE region(s) — review for code "
-                    "outside any loaded module.");
-            }
-
-            report.memory_map = std::move(rm);
-            report.notes["memory.regions_total"]   = std::to_string(s.total_regions);
-            report.notes["memory.committed_bytes"] = std::to_string(s.total_committed_bytes);
-            report.notes["memory.rwx_regions"]     = std::to_string(s.rwx);
-        } else {
-            report.warnings.push_back("Memory map walk failed: " +
-                                      mm.error().message);
-        }
-
-        // 7. Output.
+        // Success: emit the JSON report.
         if (args.out_path) {
             auto w = exporter::JsonExporter::write_file(report, *args.out_path,
                                                        args.pretty);
             if (!w) {
-                std::fprintf(stderr, "Export failed: %s\n", w.error().message.c_str());
+                std::fprintf(stderr, "Export failed: %s\n",
+                             w.error().message.c_str());
                 return 8;
             }
             std::printf("OK: %s (%zu groups, %zu modules)\n",
-                        args.out_path->c_str(), report.groups.size(),
+                        args.out_path->c_str(),
+                        report.groups.size(),
                         report.modules.size());
         } else {
-            std::cout << exporter::JsonExporter::to_string(report, args.pretty) << '\n';
+            std::cout << exporter::JsonExporter::to_string(report, args.pretty)
+                      << '\n';
         }
         return 0;
     }

@@ -99,11 +99,14 @@ namespace ura::exporter {
                 { "duration_ms",   static_cast<long long>(r.duration.count()) },
             };
             root["process"] = {
-                { "pid",       r.process.pid },
-                { "name",      w2u(r.process.name) },
-                { "path",      w2u(r.process.path) },
-                { "is_wow64",  r.process.is_wow64 },
-                { "bitness",   r.process.bitness },
+                { "pid",                   r.process.pid },
+                { "name",                  w2u(r.process.name) },
+                { "path",                  w2u(r.process.path) },
+                { "is_wow64",              r.process.is_wow64 },
+                { "bitness",               r.process.bitness },
+                { "architecture",          r.process.architecture },
+                { "analyzer_architecture", r.process.analyzer_architecture },
+                { "native_architecture",   r.process.native_architecture },
             };
 
             json modules = json::array();
@@ -179,6 +182,59 @@ namespace ura::exporter {
             }
 
             root["warnings"] = r.warnings;
+
+            // Static (disk-based) PE inspection. Only emitted when the
+            // orchestrator ran the static fallback. Addresses are RVAs;
+            // runtime absolute = module_base + rva.
+            if (r.static_image.present) {
+                json st;
+                st["file_path"]            = w2u(r.static_image.file_path);
+                st["file_name"]            = w2u(r.static_image.file_name);
+                st["is_64bit"]             = r.static_image.is_64bit;
+                st["machine"]              = core::to_hex(r.static_image.machine);
+                st["timestamp"]            = r.static_image.timestamp;
+                st["image_base_preferred"] = core::to_hex(r.static_image.image_base_preferred);
+                st["size_of_image"]        = r.static_image.size_of_image;
+                st["entry_point_rva"]      = core::to_hex(r.static_image.entry_point_rva);
+                st["file_size_bytes"]      = r.static_image.file_size_bytes;
+                st["sections"]             = r.static_image.sections;
+                st["runtime_formula"]      = r.static_image.runtime_formula;
+
+                json ex_arr = json::array();
+                for (const auto& e : r.static_image.exports) {
+                    json je;
+                    je["name"]         = e.name;
+                    je["ordinal"]      = e.ordinal;
+                    je["rva"]          = core::to_hex(e.rva);
+                    je["is_forwarder"] = e.is_forwarder;
+                    if (e.is_forwarder) je["forwarder_target"] = e.forwarder_target;
+                    ex_arr.push_back(std::move(je));
+                }
+                st["exports"] = std::move(ex_arr);
+                root["static"] = std::move(st);
+            }
+
+            // Evidence-based acquisition diagnostic.
+            // downstream tooling can branch on it without falling back to
+            // string-matching the warnings array.
+            const auto& acq = r.acquisition;
+            json jacq;
+            jacq["status"]                       = platform::to_string(acq.status);
+            jacq["win32_error"]                  = acq.win32_error;
+            jacq["analyzer_architecture"]        = core::to_string(acq.analyzer_architecture);
+            jacq["target_architecture"]          = core::to_string(acq.target_architecture);
+            jacq["native_architecture"]          = core::to_string(acq.native_architecture);
+            jacq["process_handle_opened"]        = acq.process_handle_opened;
+            jacq["process_query_succeeded"]      = acq.process_query_succeeded;
+            jacq["module_enumeration_succeeded"] = acq.module_enumeration_succeeded;
+            jacq["memory_read_succeeded"]        = acq.memory_read_succeeded;
+            jacq["enumeration_attempts"]         = acq.enumeration_attempts;
+            jacq["failed_api"]                   = acq.failed_api;
+            jacq["failed_stage"]                 = acq.failed_stage;
+            jacq["details"]                      = acq.details;
+            jacq["recommended_action"]           = acq.recommended_action;
+            root["acquisition"] = std::move(jacq);
+
             return root;
         }
 

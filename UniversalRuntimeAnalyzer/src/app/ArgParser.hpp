@@ -14,6 +14,7 @@ namespace ura::app {
         // Subject selection
         std::optional<std::uint32_t> pid;
         std::optional<std::wstring>  process_name;
+        std::optional<std::wstring>  static_pe_path;   // --static-pe <path>
 
         // Engine selection
         bool                         auto_detect = true;
