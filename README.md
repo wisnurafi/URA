@@ -189,3 +189,15 @@ when the live walk succeeded.
 ## Layout
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+## Project docs
+
+- `docs/ARCHITECTURE.md` — how the code is organized
+- `docs/ETHICS.md` — scope policy: what this tool is for and what it will never do (read this first)
+- `CONTRIBUTING.md` — building, adding an engine module, contribution rules
+- `SECURITY.md` — how to report vulnerabilities
+- `roadmap.txt` — where it's heading, and what's out of scope
+
+## License
+
+MIT — see [LICENSE](LICENSE).

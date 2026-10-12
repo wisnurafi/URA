@@ -1,0 +1,37 @@
+Universal Runtime Analyzer roadmap
+==================================
+Last updated: 2026-10-12
+
+URA is a read-only RE study tool. Direction, not a promise — and
+everything below stays inside docs/ETHICS.md. Anything that needs a
+write primitive doesn't belong here, roadmap or not.
+
+DONE
+----
+- Read-only process attachment (PROCESS_QUERY_INFORMATION |
+  PROCESS_VM_READ, no write API anywhere)
+- PE32/PE32+ parser, IDA-style pattern scanner, string scanner,
+  x86/x64 xref decoder
+- MSVC RTTI / vtable scanner with best-effort demangling
+- Memory region map with RWX anomaly flagging
+- Evidence-based acquisition diagnostic (no more "looks like
+  anti-cheat" guessing)
+- Static PE fallback (--static-pe) for pure offline analysis
+- Versioned JSON exporter, CLI + ImGui/DX11 GUI
+
+NEXT
+----
+- Finish the skeleton engines: Among Us and Source engine games
+  (UnityIL2CPP and SourceEngine modules exist as stubs).
+- More engine modules driven by signature JSON, not code changes.
+- Richer anomaly heuristics on the memory map (beyond RWX flagging).
+- GUI polish: better tabs for large RTTI class lists and long
+  region maps.
+
+EXPLICITLY OUT OF SCOPE
+-----------------------
+- Everything in docs/ETHICS.md's hard restrictions: WriteProcessMemory,
+  injection, anti-cheat evasion, kernel drivers, hooks, multiplayer
+  network interaction.
+- Live "offset dumper for current games" features. Offsets for live
+  multiplayer titles facilitate cheating — URA won't ship that.
